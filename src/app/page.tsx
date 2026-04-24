@@ -1,9 +1,25 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { FileUp, ClipboardPaste, Sparkles } from "lucide-react"
+"use client";
+
+import { useState } from "react";
+import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ClipboardPaste, Sparkles } from "lucide-react";
+
+const ResumeUploader = dynamic(
+  () => import("@/components/ResumeUploader").then(mod => mod.ResumeUploader),
+  { ssr: false }
+);
 
 export default function Home() {
+  const [resumeText, setResumeText] = useState<string>("");
+
+  const handleTextExtracted = (text: string) => {
+    setResumeText(text);
+    console.log("提取的简历文本：", text); // 可在浏览器控制台查看
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       {/* 顶部导航 */}
@@ -31,14 +47,9 @@ export default function Home() {
 
         {/* 核心操作区 */}
         <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto mb-12">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-dashed">
-            <CardContent className="pt-6 text-center">
-              <FileUp className="h-12 w-12 mx-auto mb-4 text-primary" />
-              <h3 className="font-semibold text-lg mb-2">上传简历文件</h3>
-              <p className="text-sm text-muted-foreground">支持 PDF、Word、图片格式</p>
-            </CardContent>
-          </Card>
-          
+          {/* 使用封装好的上传组件 */}
+          <ResumeUploader onTextExtracted={handleTextExtracted} />
+
           <Card className="cursor-pointer hover:shadow-lg transition-shadow">
             <CardContent className="pt-6 text-center">
               <ClipboardPaste className="h-12 w-12 mx-auto mb-4 text-primary" />
@@ -47,6 +58,16 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
+
+        {/* 显示提取的简历文本（临时调试用，Day 3 将美化展示） */}
+        {resumeText && (
+          <div className="max-w-3xl mx-auto mb-12 p-6 bg-white dark:bg-slate-900 rounded-lg border">
+            <h3 className="font-semibold text-lg mb-2">📋 提取的简历文本</h3>
+            <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-mono">
+              {resumeText}
+            </pre>
+          </div>
+        )}
 
         <Separator className="my-8" />
 
@@ -96,5 +117,5 @@ export default function Home() {
         </div>
       </main>
     </div>
-  )
+  );
 }
