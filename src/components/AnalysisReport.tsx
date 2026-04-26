@@ -1,40 +1,27 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress"; // 稍后安装
-import { Badge } from "@/components/ui/badge"; // 稍后安装
-import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2, Lightbulb } from "lucide-react";
 
-interface AnalysisReportProps {
-  resumeText: string;
-  jobDescription: string;
+interface AnalysisData {
+  overallScore: number;
+  scores: { name: string; value: number }[];
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  suggestions: string[];
+  summary: string;
 }
 
-// 模拟分析结果（后续替换为真实 AI 返回）
-const mockAnalysisResult = {
-  overallScore: 78,
-  scores: [
-    { name: "关键词匹配", value: 80 },
-    { name: "工作经验", value: 70 },
-    { name: "教育背景", value: 85 },
-    { name: "技能匹配", value: 75 },
-    { name: "格式规范", value: 90 },
-  ],
-  matchedKeywords: ["React", "TypeScript", "前端开发", "组件化"],
-  missingKeywords: ["Webpack", "性能优化", "自动化测试"],
-  suggestions: [
-    "在项目经历中补充「性能优化」相关的量化成果",
-    "增加关于「自动化测试」的经验描述，如 Jest 或 Testing Library",
-    "将技术栈描述调整得更接近 JD 中的用词，如「Webpack」",
-  ],
-  summary:
-    "简历与岗位的整体匹配度良好，技术栈基本符合要求。建议在项目描述中突出性能优化和测试经验，并补充 Webpack 相关技能。",
-};
+interface AnalysisReportProps {
+  data: AnalysisData | null;
+}
 
-export function AnalysisReport({ resumeText, jobDescription }: AnalysisReportProps) {
-  // 实际项目中这里会调用 AI API，目前使用模拟数据
-  const report = mockAnalysisResult;
+export function AnalysisReport({ data }: AnalysisReportProps) {
+  if (!data) return null;
+
+  const report = data;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

@@ -5,11 +5,11 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { JobDescriptionInput } from "@/components/JobDescriptionInput";
 import { AnalysisReport } from "@/components/AnalysisReport";
 
-// 动态导入 PDF 上传组件，关闭 SSR 避免 canvas 错误
+// 动态导入 PDF 上传组件，关闭 SSR
 const ResumeUploader = dynamic(
   () => import("@/components/ResumeUploader").then((mod) => mod.ResumeUploader),
   { ssr: false }
@@ -18,17 +18,45 @@ const ResumeUploader = dynamic(
 export default function Home() {
   const [resumeText, setResumeText] = useState<string>("");
   const [jobDescription, setJobDescription] = useState<string>("");
-  const [showReport, setShowReport] = useState(false);
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
+
+  const fetchAnalysis = async (resume: string, jd: string) => {
+    setIsAnalyzing(true);
+    setAnalysisError("");
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resumeText: resume, jobDescription: jd }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "请求失败");
+      }
+      const data = await res.json();
+      setAnalysisData(data);
+    } catch (err: any) {
+      console.error("分析失败：", err);
+      setAnalysisError(err.message || "分析失败，请稍后重试");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleResumeText = (text: string) => {
     setResumeText(text);
-    // 如果 JD 也已就绪，则显示报告
-    if (jobDescription) setShowReport(true);
+    if (jobDescription) {
+      fetchAnalysis(text, jobDescription);
+    }
   };
 
   const handleJdSubmit = (jd: string) => {
     setJobDescription(jd);
-    if (resumeText) setShowReport(true);
+    if (resumeText) {
+      fetchAnalysis(resumeText, jd);
+    }
   };
 
   return (
@@ -61,7 +89,7 @@ export default function Home() {
           <JobDescriptionInput onJdSubmit={handleJdSubmit} />
         </div>
 
-        {/* 显示简历文本预览（可选，方便用户确认） */}
+        {/* 简历文本预览 */}
         {resumeText && (
           <div className="max-w-3xl mx-auto mb-8 p-4 bg-white dark:bg-slate-900 rounded-lg border">
             <h3 className="font-semibold text-sm mb-2">📄 已提取的简历文本</h3>
@@ -73,12 +101,27 @@ export default function Home() {
 
         <Separator className="my-8" />
 
-        {/* 分析报告区域 */}
-        {showReport && (
-          <AnalysisReport resumeText={resumeText} jobDescription={jobDescription} />
+        {/* 加载状态 */}
+        {isAnalyzing && (
+          <div className="text-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-2 text-muted-foreground">AI 正在深度分析你的简历...</p>
+          </div>
         )}
 
-        {/* 如果还没提交任何内容，显示功能预览 */}
+        {/* 错误提示 */}
+        {analysisError && (
+          <div className="max-w-4xl mx-auto bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+            {analysisError}
+          </div>
+        )}
+
+        {/* 分析报告 */}
+        {analysisData && !isAnalyzing && (
+          <AnalysisReport data={analysisData} />
+        )}
+
+        {/* 未操作时显示功能预览 */}
         {!resumeText && !jobDescription && (
           <>
             <div className="text-center mb-8">
@@ -86,7 +129,6 @@ export default function Home() {
               <p className="text-muted-foreground">全方位解析简历，精准定位提升方向</p>
             </div>
             <div className="grid gap-6 md:grid-cols-4">
-              {/* 保持原来的功能预览卡片 */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">匹配度评分</CardTitle>
